@@ -14,21 +14,69 @@ function Book(title, author, pages, read=false) {
         };
     }
 
+    // User management system
+const userSystem = {
+    users: {},
+    currentUser: null,
+    
+    login: function(username) {
+        if (!username.trim()) return false;
+        
+        if (!this.users[username]) {
+            this.users[username] = { books: [] };
+        }
+        
+        this.currentUser = username;
+        this.showAppContent();
+        document.getElementById('currentUser').textContent = username;
+        library.displayBooks();
+        
+        console.log(`Welcome ${username}!`);
+        return true;
+    },
+    
+    logout: function() {
+        this.currentUser = null;
+        this.showLoginSection();
+        console.log('Signed out successfully');
+    },
+    
+    showLoginSection: function() {
+        document.getElementById('loginSection').style.display = 'block';
+        document.getElementById('appContent').style.display = 'none';
+    },
+    
+    showAppContent: function() {
+        document.getElementById('loginSection').style.display = 'none';
+        document.getElementById('appContent').style.display = 'block';
+    },
+    
+    getCurrentUserBooks: function() {
+        if (!this.currentUser) return [];
+        return this.users[this.currentUser].books;
+    }
+};
+
     // Library management
 const library = {
     books: [],
     
     addBook: function(title, author, pages, read = false) {
+        if (!userSystem.currentUser) return;
+
         const newBook = new Book(title, author, pages, read);
-        this.books.push(newBook);
+        userSystem.users[userSystem.currentUser].books.push(newBook);
         this.displayBooks();
         console.log(`Added: ${newBook.info()}`);
     },
     
     removeBook: function(title) {
-        const index = this.books.findIndex(book => book.title === title);
+        if (!userSystem.currentUser) return;
+        
+        const books = userSystem.users[userSystem.currentUser].books;
+        const index = books.findIndex(book => book.title === title);
         if (index !== -1) {
-            const removedBook = this.books.splice(index, 1)[0];
+            const removedBook = books.splice(index, 1)[0];
             this.displayBooks();
             console.log(`Removed: ${removedBook.title}`);
         } else {
@@ -37,7 +85,10 @@ const library = {
     },
     
     toggleBookRead: function(title) {
-        const book = this.books.find(book => book.title === title);
+        if (!userSystem.currentUser) return;
+
+        const books = userSystem.users[userSystem.currentUser].books;
+        const book = books.find(book => book.title === title);
         if (book) {
             book.toggleRead();
             this.displayBooks();
@@ -48,13 +99,14 @@ const library = {
     
     displayBooks: function() {
         const bookList = document.getElementById('bookList');
+        const books = userSystem.getCurrentUserBooks();
         
         if (this.books.length === 0) {
             bookList.innerHTML = '<div class="empty-library">No books in your library yet. Add one above!</div>';
             return;
         }
         
-        bookList.innerHTML = this.books.map(book => `
+        bookList.innerHTML = books.map(book => `
             <div class="book-item">
                 <div class="book-info">
                     <strong>${book.title}</strong> by ${book.author}<br>
@@ -78,24 +130,33 @@ const library = {
 };
 
 // Form handling
-document.getElementById('bookForm').addEventListener('submit', function(e) {
-    e.preventDefault();
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('loginForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const username = document.getElementById('usernameInput').value.trim();
+        if (userSystem.login(username)) {
+            document.getElementById('usernameInput').value = '';
+        }
+    });
     
-    const title = document.getElementById('title').value.trim();
-    const author = document.getElementById('author').value.trim();
-    const pages = parseInt(document.getElementById('pages').value);
-    const read = document.getElementById('read').checked;
-    
-    if (title && author && pages > 0) {
-        library.addBook(title, author, pages, read);
-        
-        // Clear the form
-        this.reset();
-        
-        // Focus back on title field for easy next entry
-        document.getElementById('title').focus();
-    }
-});
+    document.getElementById('logoutBtn').addEventListener('click', function() {
+        userSystem.logout();
+    });
 
-// Initial focus on title field
-document.getElementById('title').focus();
+    document.getElementById('bookForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const title = document.getElementById('title').value.trim();
+        const author = document.getElementById('author').value.trim();
+        const pages = parseInt(document.getElementById('pages').value);
+        const read = document.getElementById('read').checked;
+        
+        if (title && author && pages > 0) {
+            library.addBook(title, author, pages, read);
+            this.reset();
+            document.getElementById('title').focus();
+        }
+    });
+
+    document.getElementById('usernameInput').focus();
+});
