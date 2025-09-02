@@ -14,7 +14,7 @@ function Book(title, author, pages, read=false) {
         };
     }
 
-    // User management system
+    // User
 const userSystem = {
     users: {},
     currentUser: null,
@@ -57,7 +57,7 @@ const userSystem = {
     }
 };
 
-    // Library management
+    // Library
 const library = {
     books: [],
     
@@ -129,7 +129,7 @@ const library = {
     }
 };
 
-// Form handling
+// Form
 document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('loginForm').addEventListener('submit', function(e) {
         e.preventDefault();
